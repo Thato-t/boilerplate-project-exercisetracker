@@ -59,14 +59,14 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       username:  user.username,
       description: description,
       duration: parseInt(duration),
-      date: date ? newDate(date) : new Date(),
+      date: date ? newDate(date).toDateString() : new Date().toDateString(),
       _id: user._id
     })
     await newExercise.save()
     res.json({
        _id:user._id,
       username: user.username,
-      date: newExercise.date.toDateString(),
+      date: newExercise.date,
       duration: newExercise.duration,
       description: newExercise.description      
     })
