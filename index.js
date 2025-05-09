@@ -18,15 +18,6 @@ const userSchema = new mongoose.Schema({
   username: String
 })
 
-const logSchema = new mongoose.Schema({
-  username: {type: String, required: true},
-  count: Number,
-  log:[{
-    description: String,
-    duration: Number,
-    date: String,
-  }]
-})
 
 const exerciseSchema = new mongoose.Schema({
   description: String,
@@ -36,7 +27,6 @@ const exerciseSchema = new mongoose.Schema({
 })
 
 const User = mongoose.model('User', userSchema)
-const Log = mongoose.model('Log', logSchema)
 const Exercise = mongoose.model('Exercise', exerciseSchema)
 
 
@@ -54,46 +44,65 @@ app.post('/api/users', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   const users = await User.find()
-  res.json(users)
+  res.json(users.map(user => {
+      username: user.username,
+      _id: user._id
+  }))
 })
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
-  const id = req.body[':_id']
+  const id = req.params._id
   const description = req.body.description;
   const duration = parseInt(req.body.duration);
   const date = !req.body.date ? `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}` : req.body.date;
-  const userId = await User.findById(id);
-  if(!userId){
-    res.send(`${userId} not found`)
-  } else{
+  const user = await User.findById(id);
+  if(!user) return res.send(`${userId} not found`)
     const newExercise = new Exercise({
-      username:  userId.username,
-      description: description,
-      duration: duration,
+      username:  user.username,
+      description,
+      duration: parseInt(duration),
       date: new Date().toDateString(date),
-      _id: userId._id
+      _id: user._id
     })
     await newExercise.save()
-    res.send(newExercise)
-  }
+    res.send({
+       _id:user._id,
+      username: user.username,
+      date: newExercise.date,
+      duration: newExercise.duration,
+      description: newExercise.description      
+    })
 })
 
-app.get('/api/users/:id/logs', async (req, res) => {
-  const id  = req.params.id
-  const username = await User.findById(id)
-  const logs = await Exercise.findById(id)
-  const newLog = new Log({
-    username:username.username,
-    count: 1,
-    _id: id,
-    log: [{
-      description:logs.description,
-      duration:logs.duration,
-      date:new Date().toDateString(logs.date)
-    }]
-  })
-  res.send(newLog)
-})
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const { from, to, limit } = req.query;
+  const user = await User.findById(req.params._id);
+  if (!user) return res.send("User not found");
+
+  let filter = { userId: user._id };
+  if (from || to) {
+    filter.date = {};
+    if (from) filter.date.$gte = new Date(from);
+    if (to) filter.date.$lte = new Date(to);
+  }
+
+  let query = Exercise.find(filter).select('-_id description duration date');
+  if (limit) query = query.limit(Number(limit));
+
+  const logs = await query.exec();
+
+  res.json({
+    username: user.username,
+    count: logs.length,
+    _id: user._id,
+    log: logs.map(e => ({
+      description: e.description,
+      duration: e.duration,
+      date: e.date.toDateString()
+    }))
+  });
+});
+
 
 app.listen(port, () => {
   console.log('Your app is listening on port ' + port)
