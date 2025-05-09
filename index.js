@@ -52,8 +52,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
   const id = req.params._id
-        const { description, duration, date } = req.body
-  const date = req.body.date ? newDate() : new Date();
+  const { description, duration, date } = req.body
   const user = await User.findById(id);
   if(!user) return res.send(`${userId} not found`)
     const newExercise = new Exercise({
