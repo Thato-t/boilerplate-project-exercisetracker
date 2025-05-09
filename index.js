@@ -49,7 +49,7 @@ app.post('/api/users', async (req, res) => {
     username: req.body.username
   })
   await newUser.save()
-  res.send(`${newUser.username} saved`)
+  res.send(newUser)
 })
 
 app.get('/api/users', async (req, res) => {
@@ -73,7 +73,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
       _id: userId._id
     })
     await newExercise.save()
-    res.send('exercise saved')
+    res.send(newExercise)
   }
 })
 
