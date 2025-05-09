@@ -43,11 +43,11 @@ app.post('/api/users', async (req, res) => {
 })
 
 app.get('/api/users', async (req, res) => {
-  const users = await User.find()
-  res.json(users.map(user => {
+  const users = await User.find({})
+  res.json(users.map(user => ({
       username: user.username,
       _id: user._id
-  }))
+  })))
 })
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
@@ -59,16 +59,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   if(!user) return res.send(`${userId} not found`)
     const newExercise = new Exercise({
       username:  user.username,
-      description,
+      description: description,
       duration: parseInt(duration),
-      date: new Date().toDateString(date),
+      date: date,
       _id: user._id
     })
     await newExercise.save()
     res.send({
        _id:user._id,
       username: user.username,
-      date: newExercise.date,
+      date: newExercise.date.toDateString(),
       duration: newExercise.duration,
       description: newExercise.description      
     })
