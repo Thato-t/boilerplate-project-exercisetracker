@@ -73,30 +73,42 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 })
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  const { from, to, limit } = req.query; // Extract query parameters
-  const user = await User.findById(req.params._id); // Find user by ID
-  if (!user) return res.send("User not found"); // Handle user not found
+  const { from, to, limit } = req.query;
+  const user = await User.findById(req.params._id);
+  if (!user) return res.send("User not found");
 
-  let filter = { userId: user._id }; // Filter exercises by user ID
+  let filter = { userId: user._id };
+  
+  // Handle date filtering
   if (from || to) {
-    filter.date = {}; // Initialize date filter
-    if (from) filter.date.$gte = new Date(from); // Filter from date
-    if (to) filter.date.$lte = new Date(to); // Filter to date
+    filter.date = {};
+    if (from) {
+      const fromDate = new Date(from).toDateString();
+      filter.date = fromDate;
+    }
+    if (to) {
+      const toDate = new Date(to).toDateString();
+      filter.date = toDate;
+    }
   }
 
-  let query = Exercise.find(filter).select('-_id description duration date'); // Build query
-  if (limit) query = query.limit(Number(limit)); // Apply limit if provided
+  // Find exercises and apply limit if specified
+  let query = Exercise.find(filter);
+  if (limit) {
+    query = query.limit(Number(limit));
+  }
 
-  const logs = await query.exec(); // Execute query
+  const logs = await query.exec();
 
+  // Format response
   res.json({
-    username: user.username, // Include username
-    count: logs.length, // Include count of logs
-    _id: user._id, // Include user ID
+    username: user.username,
+    count: logs.length,
+    _id: user._id,
     log: logs.map(e => ({
-      description: e.description, // Ensure description is a string
-      duration: e.duration, // Ensure duration is a number
-      date: new Date(e.date).toDateString() // Format date as string
+      description: e.description,
+      duration: e.duration,
+      date: e.date
     }))
   });
 });
