@@ -23,7 +23,7 @@ const exerciseSchema = new mongoose.Schema({
   description: String,
   duration: Number,
   date: String,
-  _id: String
+  userId: String // Reference to the user
 })
 
 const User = mongoose.model('User', userSchema)
@@ -54,13 +54,13 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   const id = req.params._id
   const { description, duration, date } = req.body
   const user = await User.findById(id);
-  if(!user) return res.send(`${userId} not found`)
+  if(!user) return res.send(`${user} not found`)
     const newExercise = new Exercise({
       username:  user.username,
       description: description,
       duration: parseInt(duration),
       date: date ? new Date(date).toDateString() : new Date().toDateString(),
-      _id: user._id
+      userId: user._id
     })
     await newExercise.save()
     res.json({
@@ -73,30 +73,30 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 })
 
 app.get('/api/users/:_id/logs', async (req, res) => {
-  const { from, to, limit } = req.query;
-  const user = await User.findById(req.params._id);
-  if (!user) return res.send("User not found");
+  const { from, to, limit } = req.query; // Extract query parameters
+  const user = await User.findById(req.params._id); // Find user by ID
+  if (!user) return res.send("User not found"); // Handle user not found
 
-  let filter = { userId: user._id };
+  let filter = { userId: user._id }; // Filter exercises by user ID
   if (from || to) {
-    filter.date = {};
-    if (from) filter.date.$gte = new Date(from);
-    if (to) filter.date.$lte = new Date(to);
+    filter.date = {}; // Initialize date filter
+    if (from) filter.date.$gte = new Date(from); // Filter from date
+    if (to) filter.date.$lte = new Date(to); // Filter to date
   }
 
-  let query = Exercise.find(filter).select('-_id description duration date');
-  if (limit) query = query.limit(Number(limit));
+  let query = Exercise.find(filter).select('-_id description duration date'); // Build query
+  if (limit) query = query.limit(Number(limit)); // Apply limit if provided
 
-  const logs = await query.exec();
+  const logs = await query.exec(); // Execute query
 
   res.json({
-    username: user.username,
-    count: logs.length,
-    _id: user._id,
+    username: user.username, // Include username
+    count: logs.length, // Include count of logs
+    _id: user._id, // Include user ID
     log: logs.map(e => ({
-      description: e.description,
-      duration: e.duration,
-      date: e.date.toDateString()
+      description: e.description, // Ensure description is a string
+      duration: e.duration, // Ensure duration is a number
+      date: new Date(e.date).toDateString() // Format date as string
     }))
   });
 });
