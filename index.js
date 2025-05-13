@@ -76,19 +76,18 @@ app.get('/api/users/:_id/logs', async (req, res) => {
   const { from, to, limit } = req.query;
   const user = await User.findById(req.params._id);
   if (!user) return res.send("User not found");
-
   let filter = { userId: user._id };
   
   // Handle date filtering
   if (from || to) {
     filter.date = {};
     if (from) {
-      const fromDate = new Date(from).toDateString();
-      filter.date = fromDate;
+      const fromDate = new Date(from);
+      filter.date.$gte = fromDate.toDateString();
     }
     if (to) {
-      const toDate = new Date(to).toDateString();
-      filter.date = toDate;
+      const toDate = new Date(to);
+      filter.date.$lte = toDate.toDateString();
     }
   }
 
